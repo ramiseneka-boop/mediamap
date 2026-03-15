@@ -604,7 +604,22 @@ export default function InstagramCatalogPage() {
                 className={`rounded-2xl border p-4 cursor-pointer card-hover anim-fade-in-up ${checked ? 'bg-sky-500/10 border-sky-500/30' : 'bg-gray-900/40 border-gray-800/50 hover:border-gray-700'}`}
                 style={{ animationDelay: `${idx * 30}ms` }}
                 onClick={() => toggleSelect(p.username)}>
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start gap-3 mb-3">
+                  {/* Avatar */}
+                  <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-gray-800 border-2 border-gray-700/50 ring-2 ring-sky-500/20">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://unavatar.io/instagram/${p.username}`}
+                      alt={p.username}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        const el = e.target as HTMLImageElement
+                        el.style.display = 'none'
+                        el.parentElement!.innerHTML = `<div class="w-full h-full flex items-center justify-center text-sky-400 text-lg font-bold bg-gradient-to-br from-sky-500/20 to-blue-500/20">${p.username.charAt(0).toUpperCase()}</div>`
+                      }}
+                    />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <a href={`https://instagram.com/${p.username}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
                       className="text-sky-400 hover:text-sky-300 font-semibold text-sm truncate block">@{p.username}</a>
@@ -668,9 +683,18 @@ export default function InstagramCatalogPage() {
                     </td>
                     <td className="py-2.5 px-3 text-gray-300 whitespace-nowrap text-xs font-medium">{p.cityName}</td>
                     <td className="py-2.5 px-3 whitespace-nowrap">
-                      <a href={`https://instagram.com/${p.username}`} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
-                        className="text-sky-400 hover:text-sky-300 transition font-medium">@{p.username}</a>
-                      {p.custom && <button onClick={e=>{e.stopPropagation();deleteCustomPablik(p.username)}} className="ml-1.5 text-red-500/50 hover:text-red-400 text-[10px]">✕</button>}
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-gray-800 border border-gray-700/50">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={`https://unavatar.io/instagram/${p.username}`} alt="" className="w-full h-full object-cover" loading="lazy"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display='none' }} />
+                        </div>
+                        <div>
+                          <a href={`https://instagram.com/${p.username}`} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
+                            className="text-sky-400 hover:text-sky-300 transition font-medium">@{p.username}</a>
+                          {p.custom && <button onClick={e=>{e.stopPropagation();deleteCustomPablik(p.username)}} className="ml-1.5 text-red-500/50 hover:text-red-400 text-[10px]">✕</button>}
+                        </div>
+                      </div>
                     </td>
                     <td className="py-2.5 px-3 text-gray-500 text-[11px] whitespace-nowrap hidden sm:table-cell">{p.catIcon} {p.catName}</td>
                     <td className="py-2.5 px-3 text-right font-semibold text-white">{fmtK(p.subscribers)}</td>
