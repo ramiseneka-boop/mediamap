@@ -15,6 +15,7 @@ interface Pablik {
   catName: string
   catIcon: string
   custom?: boolean
+  avatarUrl?: string
 }
 interface SavedSelection { name: string; usernames: string[]; mode: 'client'|'full'; date: string }
 interface HistoryEntry { name: string; client: string; usernames: string[]; mode: 'client'|'full'; package: string; totalPrice: number; date: string; status: 'draft'|'sent'|'accepted'|'paid' }
@@ -117,11 +118,11 @@ export default function InstagramCatalogPage() {
   useEffect(() => {
     (async () => {
       const [{ data: media }, { data: citiesData }, { data: catsData }] = await Promise.all([
-        supabase.from('media_resources').select('id, username, subscribers, cost_post, sell_post, city:cities(name), category:categories(name, icon)').eq('platform','instagram').order('subscribers',{ascending:false}),
+        supabase.from('media_resources').select('id, username, subscribers, cost_post, sell_post, metadata, city:cities(name), category:categories(name, icon)').eq('platform','instagram').order('subscribers',{ascending:false}),
         supabase.from('cities').select('name').order('name'),
         supabase.from('categories').select('name, icon').order('name'),
       ])
-      const rows: Pablik[] = (media||[]).map((r:any)=>({ id:r.id, username:r.username||'', subscribers:r.subscribers||0, cost_post:r.cost_post||0, sell_post:r.sell_post||0, cityName:r.city?.name||'', catName:r.category?.name||'', catIcon:r.category?.icon||'' }))
+      const rows: Pablik[] = (media||[]).map((r:any)=>({ id:r.id, username:r.username||'', subscribers:r.subscribers||0, cost_post:r.cost_post||0, sell_post:r.sell_post||0, cityName:r.city?.name||'', catName:r.category?.name||'', catIcon:r.category?.icon||'', avatarUrl:r.metadata?.avatar_url||'' }))
       try { const custom:Pablik[] = JSON.parse(localStorage.getItem('pabliki_custom_ig')||'[]'); for(const cp of custom) if(!rows.find(r=>r.username===cp.username)) rows.push({...cp,custom:true}) } catch{}
       setPabliks(rows)
       setAllCities((citiesData||[]).map((c:any)=>c.name))
@@ -606,7 +607,12 @@ export default function InstagramCatalogPage() {
                 onClick={() => toggleSelect(p.username)}>
                 <div className="flex items-start gap-3 mb-3">
                   {/* Avatar */}
-                  <div className={`w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center text-lg font-bold border-2 ${checked ? 'border-sky-500/50 ring-2 ring-sky-500/30' : 'border-gray-700/50'}`}
+                  {p.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.avatarUrl} alt={p.username} className={`w-11 h-11 rounded-full flex-shrink-0 object-cover border-2 ${checked ? 'border-sky-500/50 ring-2 ring-sky-500/30' : 'border-gray-700/50'}`}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden') }} />
+                  ) : null}
+                  <div className={`w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center text-lg font-bold border-2 ${checked ? 'border-sky-500/50 ring-2 ring-sky-500/30' : 'border-gray-700/50'} ${p.avatarUrl ? 'hidden' : ''}`}
                     style={{background: `linear-gradient(135deg, hsl(${p.username.charCodeAt(0)*7%360},60%,25%), hsl(${(p.username.charCodeAt(1)||0)*11%360},50%,20%))`}}>
                     <span className="text-white/90">{p.username.charAt(0).toUpperCase()}</span>
                   </div>
@@ -674,7 +680,12 @@ export default function InstagramCatalogPage() {
                     <td className="py-2.5 px-3 text-gray-300 whitespace-nowrap text-xs font-medium">{p.cityName}</td>
                     <td className="py-2.5 px-3 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold border border-gray-700/50"
+                        {p.avatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.avatarUrl} alt={p.username} className={`w-7 h-7 rounded-full flex-shrink-0 object-cover border ${checked ? 'border-sky-500/50 ring-2 ring-sky-500/30' : 'border-gray-700/50'}`}
+                            onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden') }} />
+                        ) : null}
+                        <div className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold border border-gray-700/50 ${p.avatarUrl ? 'hidden' : ''}`}
                           style={{background: `linear-gradient(135deg, hsl(${p.username.charCodeAt(0)*7%360},60%,25%), hsl(${(p.username.charCodeAt(1)||0)*11%360},50%,20%))`}}>
                           <span className="text-white/90">{p.username.charAt(0).toUpperCase()}</span>
                         </div>
