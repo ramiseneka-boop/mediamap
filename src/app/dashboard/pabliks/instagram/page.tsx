@@ -23,15 +23,7 @@ const MAIN_CITIES = ['Алматы','Астана','Шымкент','Караг�
 const BUDGET_PRESETS = [{l:'300К',v:300000},{l:'500К',v:500000},{l:'1М',v:1000000},{l:'2М',v:2000000},{l:'5М',v:5000000}]
 const PAGE_SIZE = 100
 
-const CITY_COORDS: Record<string,[number,number]> = {
-  'Алматы':[820,380],'Астана':[600,200],'Шымкент':[620,430],'Караганда':[650,250],
-  'Уральск':[150,200],'Павлодар':[700,170],'Петропавловск':[580,120],'Семей':[780,220],
-  'Актобе':[300,250],'Атырау':[130,300],'Усть-Каменогорск':[830,220],'Кокшетау':[560,160],
-  'Актау':[80,370],'Костанай':[380,160],'Тараз':[660,400],'Жезказган':[500,300],
-  'Кызылорда':[420,380],'Талдыкорган':[810,330]
-}
 
-const KZ_OUTLINE = "M 50,180 L 80,120 L 200,80 L 350,70 L 500,90 L 600,80 L 750,100 L 880,130 L 950,180 L 960,250 L 920,320 L 870,380 L 820,420 L 700,460 L 580,470 L 450,440 L 350,420 L 250,380 L 150,350 L 80,310 L 50,250 Z"
 
 const fmt = (n: number) => n.toLocaleString('ru-RU')
 const fmtK = (n: number) => {
@@ -79,8 +71,6 @@ export default function InstagramCatalogPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showSavedModal, setShowSavedModal] = useState(false)
   const [showCompareModal, setShowCompareModal] = useState(false)
-  const [showMap, setShowMap] = useState(false)
-  const [hoveredCity, setHoveredCity] = useState<string|null>(null)
   const [savedSelections, setSavedSelections] = useState<SavedSelection[]>([])
   const [apIg, setApIg] = useState(''); const [apCity, setApCity] = useState(''); const [apCat, setApCat] = useState('')
   const [apSubs, setApSubs] = useState(''); const [apCost, setApCost] = useState(''); const [apPrice, setApPrice] = useState('')
@@ -126,6 +116,11 @@ export default function InstagramCatalogPage() {
 
   const filtered = getFiltered()
   const sorted = [...filtered].sort((a,b) => {
+    // Selected items always on top
+    const aS = selected.has(a.username) ? 1 : 0
+    const bS = selected.has(b.username) ? 1 : 0
+    if (aS !== bS) return bS - aS
+
     let av:any, bv:any
     switch(sortCol){
       case 'c': av=a.cityName;bv=b.cityName;break; case 'ig': av=a.username;bv=b.username;break
@@ -157,9 +152,6 @@ export default function InstagramCatalogPage() {
   const totalReach = pabliks.reduce((s,p)=>s+getReach(p).avg,0)
 
   /* city counts for map */
-  const cityCounts: Record<string,number> = {}
-  pabliks.forEach(p => { if(p.cityName) cityCounts[p.cityName] = (cityCounts[p.cityName]||0)+1 })
-  const maxCityCount = Math.max(...Object.values(cityCounts), 1)
 
   /* helpers */
   const toggleSelect = (ig:string) => setSelected(prev=>{const s=new Set(prev);s.has(ig)?s.delete(ig):s.add(ig);return s})
@@ -400,38 +392,6 @@ export default function InstagramCatalogPage() {
             🃏 Карточки
           </button>
         </div>
-      </div>
-
-      {/* ── Kazakhstan Map ── */}
-      <div className="mb-5">
-        <button onClick={()=>setShowMap(!showMap)} className="flex items-center gap-2 text-sm font-semibold text-gray-300 hover:text-white transition mb-3 bg-gray-900/40 px-4 py-2.5 rounded-xl border border-gray-800/50 hover:border-gray-700">
-          🗺️ Карта Казахстана {showMap ? '▲' : '▼'}
-        </button>
-        {showMap && (
-          <div className="bg-gray-900/40 rounded-2xl p-4 border border-gray-800/50 anim-fade-in">
-            <svg viewBox="0 0 1000 500" className="w-full max-h-[300px]">
-              <path d={KZ_OUTLINE} fill="rgba(14,165,233,0.08)" stroke="rgba(14,165,233,0.3)" strokeWidth="2" />
-              {Object.entries(CITY_COORDS).map(([city, [cx, cy]]) => {
-                const count = cityCounts[city] || 0
-                const r = Math.max(6, Math.min(22, (count / maxCityCount) * 22))
-                const opacity = count > 0 ? 0.4 + (count / maxCityCount) * 0.6 : 0.2
-                return (
-                  <g key={city} className="cursor-pointer" onClick={() => { toggleCity(city); setShowCount(PAGE_SIZE) }} onMouseEnter={() => setHoveredCity(city)} onMouseLeave={() => setHoveredCity(null)}>
-                    <circle cx={cx} cy={cy} r={r} fill={`rgba(14,165,233,${opacity})`} stroke="rgba(14,165,233,0.8)" strokeWidth="1.5" className="transition-all duration-300 hover:stroke-white" />
-                    {count > 0 && <text x={cx} y={cy+1} textAnchor="middle" dominantBaseline="central" className="fill-white text-[8px] font-bold pointer-events-none select-none">{count}</text>}
-                    {hoveredCity === city && (
-                      <g>
-                        <rect x={cx - 50} y={cy - 30} width="100" height="22" rx="6" fill="rgba(0,0,0,0.85)" />
-                        <text x={cx} y={cy - 16} textAnchor="middle" className="fill-white text-[10px] font-medium">{city}: {count}</text>
-                      </g>
-                    )}
-                    {hoveredCity !== city && <text x={cx} y={cy + r + 12} textAnchor="middle" className="fill-gray-500 text-[9px] select-none pointer-events-none">{city}</text>}
-                  </g>
-                )
-              })}
-            </svg>
-          </div>
-        )}
       </div>
 
       {/* ── City filter ── */}
