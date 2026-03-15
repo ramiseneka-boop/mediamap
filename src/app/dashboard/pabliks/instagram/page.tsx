@@ -122,7 +122,7 @@ export default function InstagramCatalogPage() {
         supabase.from('cities').select('name').order('name'),
         supabase.from('categories').select('name, icon').order('name'),
       ])
-      const rows: Pablik[] = (media||[]).map((r:any)=>({ id:r.id, username:r.username||'', subscribers:r.subscribers||0, cost_post:r.cost_post||0, sell_post:r.sell_post||0, cityName:r.city?.name||'', catName:r.category?.name||'', catIcon:r.category?.icon||'', avatarUrl:r.metadata?.avatar_url||'' }))
+      const rows: Pablik[] = (media||[]).map((r:any)=>({ id:r.id, username:r.username||'', subscribers:r.subscribers||0, cost_post:r.cost_post||0, sell_post:r.sell_post||0, cityName:r.city?.name||'', catName:r.category?.name||'', catIcon:r.category?.icon||'', avatarUrl:`/api/avatar/${r.username||''}` }))
       try { const custom:Pablik[] = JSON.parse(localStorage.getItem('pabliki_custom_ig')||'[]'); for(const cp of custom) if(!rows.find(r=>r.username===cp.username)) rows.push({...cp,custom:true}) } catch{}
       setPabliks(rows)
       setAllCities((citiesData||[]).map((c:any)=>c.name))
