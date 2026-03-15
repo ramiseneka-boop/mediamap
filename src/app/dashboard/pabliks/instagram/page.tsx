@@ -606,19 +606,9 @@ export default function InstagramCatalogPage() {
                 onClick={() => toggleSelect(p.username)}>
                 <div className="flex items-start gap-3 mb-3">
                   {/* Avatar */}
-                  <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-gray-800 border-2 border-gray-700/50 ring-2 ring-sky-500/20">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`https://unavatar.io/instagram/${p.username}`}
-                      alt={p.username}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        const el = e.target as HTMLImageElement
-                        el.style.display = 'none'
-                        el.parentElement!.innerHTML = `<div class="w-full h-full flex items-center justify-center text-sky-400 text-lg font-bold bg-gradient-to-br from-sky-500/20 to-blue-500/20">${p.username.charAt(0).toUpperCase()}</div>`
-                      }}
-                    />
+                  <div className={`w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center text-lg font-bold border-2 ${checked ? 'border-sky-500/50 ring-2 ring-sky-500/30' : 'border-gray-700/50'}`}
+                    style={{background: `linear-gradient(135deg, hsl(${p.username.charCodeAt(0)*7%360},60%,25%), hsl(${(p.username.charCodeAt(1)||0)*11%360},50%,20%))`}}>
+                    <span className="text-white/90">{p.username.charAt(0).toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <a href={`https://instagram.com/${p.username}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
@@ -684,10 +674,9 @@ export default function InstagramCatalogPage() {
                     <td className="py-2.5 px-3 text-gray-300 whitespace-nowrap text-xs font-medium">{p.cityName}</td>
                     <td className="py-2.5 px-3 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-gray-800 border border-gray-700/50">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={`https://unavatar.io/instagram/${p.username}`} alt="" className="w-full h-full object-cover" loading="lazy"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display='none' }} />
+                        <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold border border-gray-700/50"
+                          style={{background: `linear-gradient(135deg, hsl(${p.username.charCodeAt(0)*7%360},60%,25%), hsl(${(p.username.charCodeAt(1)||0)*11%360},50%,20%))`}}>
+                          <span className="text-white/90">{p.username.charAt(0).toUpperCase()}</span>
                         </div>
                         <div>
                           <a href={`https://instagram.com/${p.username}`} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
