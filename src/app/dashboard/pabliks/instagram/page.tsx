@@ -66,7 +66,7 @@ export default function InstagramCatalogPage() {
   const [igSearch, setIgSearch] = useState('')
   const [citySearch, setCitySearch] = useState('')
   const [showMoreCities, setShowMoreCities] = useState(false)
-  const [minReach, setMinReach] = useState(0)
+
 
   const [mode, setMode] = useState<'client'|'full'>('full')
   const [viewMode, setViewMode] = useState<'table'|'cards'>('table')
@@ -121,9 +121,8 @@ export default function InstagramCatalogPage() {
     if(maxPrice<10_000_000 && p.sell_post>maxPrice) return false
     if(igSearch && !p.username.toLowerCase().includes(igSearch.toLowerCase().replace('@',''))) return false
     if(showSelectedOnly && !selected.has(p.username)) return false
-    if(minReach > 0) { const r = getReach(p); if(r.avg < minReach) return false }
     return true
-  }), [pabliks,selCities,selCats,minSubs,maxPrice,igSearch,showSelectedOnly,selected,minReach])
+  }), [pabliks,selCities,selCats,minSubs,maxPrice,igSearch,showSelectedOnly,selected])
 
   const filtered = getFiltered()
   const sorted = [...filtered].sort((a,b) => {
@@ -471,11 +470,6 @@ export default function InstagramCatalogPage() {
         <div>
           <div className="flex justify-between text-xs mb-2"><span className="text-gray-400 font-medium">Макс. цена за 1 паблик</span><span className="text-white font-bold bg-gray-800 px-2.5 py-0.5 rounded-lg">{maxPrice>=10_000_000?'∞':fmt(maxPrice)+'₸'}</span></div>
           <input type="range" min={5000} max={10_000_000} step={5000} value={maxPrice} onChange={e=>{setMaxPrice(+e.target.value);setShowCount(PAGE_SIZE)}}
-            className="w-full h-2 bg-gray-800 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-sky-500 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-sky-500/40 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-sky-400" />
-        </div>
-        <div>
-          <div className="flex justify-between text-xs mb-2"><span className="text-gray-400 font-medium">👁 Мин. охват (прогноз 3-7%)</span><span className="text-white font-bold bg-gray-800 px-2.5 py-0.5 rounded-lg">{minReach<=0?'Все':fmtK(minReach)}</span></div>
-          <input type="range" min={0} max={50000} step={500} value={minReach} onChange={e=>{setMinReach(+e.target.value);setShowCount(PAGE_SIZE)}}
             className="w-full h-2 bg-gray-800 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-sky-500 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-sky-500/40 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-sky-400" />
         </div>
         <div>
