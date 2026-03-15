@@ -39,7 +39,14 @@ const fmtK = (n: number) => {
   if (n >= 1_000) return Math.round(n / 1_000) + 'K'
   return n.toString()
 }
-const getCPM = (p: Pablik) => p.subscribers > 0 ? Math.round(p.sell_post / p.subscribers * 1000) : 0
+const getReach = (p: Pablik) => {
+  if (p.subscribers <= 0) return { min: 0, max: 0, avg: 0 }
+  const min = Math.round(p.subscribers * 0.03)
+  const max = Math.round(p.subscribers * 0.07)
+  const avg = Math.round(p.subscribers * 0.05)
+  return { min, max, avg }
+}
+const fmtReach = (p: Pablik) => { const r = getReach(p); return r.avg > 0 ? fmtK(r.min) + '–' + fmtK(r.max) : '—' }
 
 /* ═══════════════════ COMPONENT ═══════════════════ */
 export default function InstagramCatalogPage() {
@@ -59,7 +66,7 @@ export default function InstagramCatalogPage() {
   const [igSearch, setIgSearch] = useState('')
   const [citySearch, setCitySearch] = useState('')
   const [showMoreCities, setShowMoreCities] = useState(false)
-  const [maxCPM, setMaxCPM] = useState(500)
+  const [minReach, setMinReach] = useState(0)
 
   const [mode, setMode] = useState<'client'|'full'>('full')
   const [viewMode, setViewMode] = useState<'table'|'cards'>('table')
@@ -114,9 +121,9 @@ export default function InstagramCatalogPage() {
     if(maxPrice<10_000_000 && p.sell_post>maxPrice) return false
     if(igSearch && !p.username.toLowerCase().includes(igSearch.toLowerCase().replace('@',''))) return false
     if(showSelectedOnly && !selected.has(p.username)) return false
-    if(maxCPM < 500) { const cpm = getCPM(p); if(cpm > maxCPM || cpm === 0) return false }
+    if(minReach > 0) { const r = getReach(p); if(r.avg < minReach) return false }
     return true
-  }), [pabliks,selCities,selCats,minSubs,maxPrice,igSearch,showSelectedOnly,selected,maxCPM])
+  }), [pabliks,selCities,selCats,minSubs,maxPrice,igSearch,showSelectedOnly,selected,minReach])
 
   const filtered = getFiltered()
   const sorted = [...filtered].sort((a,b) => {
@@ -127,7 +134,7 @@ export default function InstagramCatalogPage() {
       case 'co': av=a.cost_post;bv=b.cost_post;break; case 'p': av=a.sell_post;bv=b.sell_post;break
       case 'm': av=a.sell_post-a.cost_post;bv=b.sell_post-b.cost_post;break
       case 'mp': av=a.sell_post>0?(a.sell_post-a.cost_post)/a.sell_post:0;bv=b.sell_post>0?(b.sell_post-b.cost_post)/b.sell_post:0;break
-      case 'cpm': av=getCPM(a);bv=getCPM(b);break
+      case 'reach': av=getReach(a).avg;bv=getReach(b).avg;break
       default: av=a.subscribers;bv=b.subscribers
     }
     if(typeof av==='string') return sortDir==='asc'?av.localeCompare(bv,'ru'):bv.localeCompare(av,'ru')
@@ -139,6 +146,7 @@ export default function InstagramCatalogPage() {
   /* selection stats */
   const allSel = pabliks.filter(p=>selected.has(p.username))
   const totalSubs = allSel.reduce((s,p)=>s+p.subscribers,0)
+  const totalSelReach = allSel.reduce((s,p)=>s+getReach(p).avg,0)
   const totalPrice = allSel.reduce((s,p)=>s+p.sell_post,0)
   const totalCost = allSel.reduce((s,p)=>s+p.cost_post,0)
   const totalMarginPct = totalPrice>0?Math.round((totalPrice-totalCost)/totalPrice*100):0
@@ -147,7 +155,7 @@ export default function InstagramCatalogPage() {
   const uniqueCities = new Set(pabliks.map(p=>p.cityName).filter(Boolean))
   const totalAllSubs = pabliks.reduce((s,p)=>s+p.subscribers,0)
   const pablicsWithSubs = pabliks.filter(p => p.subscribers > 0 && p.sell_post > 0)
-  const avgCPM = pablicsWithSubs.length > 0 ? Math.round(pablicsWithSubs.reduce((s,p)=>s+getCPM(p),0)/pablicsWithSubs.length) : 0
+  const totalReach = pabliks.reduce((s,p)=>s+getReach(p).avg,0)
 
   /* city counts for map */
   const cityCounts: Record<string,number> = {}
@@ -225,10 +233,10 @@ export default function InstagramCatalogPage() {
     const isC = mode==='client'
     const BOM = '\uFEFF'
     const sep = ';'
-    const headers = ['№','Город','Instagram','Категория','Подписчики',...(isC?[]:['Себестоимость']),'Цена','CPM',...(isC?[]:['Маржа','Маржа %'])]
+    const headers = ['№','Город','Instagram','Категория','Подписчики','Охват (прогноз)',...(isC?[]:['Себестоимость']),'Цена',...(isC?[]:['Маржа','Маржа %'])]
     const rows = allSel.map((p,i)=>{
       const mPct = p.sell_post>0?Math.round((p.sell_post-p.cost_post)/p.sell_post*100):0
-      return [i+1,p.cityName,'@'+p.username,p.catName,p.subscribers,...(isC?[]:[p.cost_post]),p.sell_post,getCPM(p),...(isC?[]:[p.sell_post-p.cost_post,mPct+'%'])]
+      return [i+1,p.cityName,'@'+p.username,p.catName,p.subscribers,fmtReach(p),...(isC?[]:[p.cost_post]),p.sell_post,...(isC?[]:[p.sell_post-p.cost_post,mPct+'%'])]
     })
     const totals = ['','ИТОГО','','',totalSubs,...(isC?[]:[totalCost]),totalPrice,'',...(isC?[]:[totalPrice-totalCost,totalMarginPct+'%'])]
     const csv = BOM + [headers,...rows,totals].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(sep)).join('\n')
@@ -245,7 +253,7 @@ export default function InstagramCatalogPage() {
     const rows = allSel.map((p,i)=>{
       const m=p.sell_post>0?Math.round((p.sell_post-p.cost_post)/p.sell_post*100):0; const mT=p.sell_post-p.cost_post
       const mc = m>=50?'#16a34a':m>=30?'#ca8a04':'#dc2626'
-      return `<tr style="border-bottom:1px solid #e8edf3"><td style="padding:10px 12px;color:#94a3b8;font-size:12px">${i+1}</td><td style="padding:10px 12px;font-weight:600;color:#1e293b">${p.cityName}</td><td style="padding:10px 12px"><a href="https://instagram.com/${p.username}" target="_blank" style="color:#0ea5e9;text-decoration:none;font-weight:500">@${p.username}</a></td><td style="padding:10px 12px;font-size:12px;color:#64748b">${p.catName}</td><td style="padding:10px 12px;text-align:right;font-weight:500">${fmt(p.subscribers)}</td><td style="padding:10px 12px;text-align:right;color:#64748b">${getCPM(p)}₸</td>${!isC?`<td style="padding:10px 12px;text-align:right;color:#64748b">${fmt(p.cost_post)}₸</td>`:''}
+      return `<tr style="border-bottom:1px solid #e8edf3"><td style="padding:10px 12px;color:#94a3b8;font-size:12px">${i+1}</td><td style="padding:10px 12px;font-weight:600;color:#1e293b">${p.cityName}</td><td style="padding:10px 12px"><a href="https://instagram.com/${p.username}" target="_blank" style="color:#0ea5e9;text-decoration:none;font-weight:500">@${p.username}</a></td><td style="padding:10px 12px;font-size:12px;color:#64748b">${p.catName}</td><td style="padding:10px 12px;text-align:right;font-weight:500">${fmt(p.subscribers)}</td><td style="padding:10px 12px;text-align:right;color:#0ea5e9;font-weight:500">${fmtReach(p)}</td>${!isC?`<td style="padding:10px 12px;text-align:right;color:#64748b">${fmt(p.cost_post)}₸</td>`:''}
       <td style="padding:10px 12px;text-align:right;font-weight:600">${fmt(p.sell_post)}₸</td>${!isC?`<td style="padding:10px 12px;text-align:right;font-weight:600;color:${mc}">${fmt(mT)}₸</td><td style="padding:10px 12px;text-align:right;font-weight:700;color:${mc}">${m}%</td>`:''}</tr>`
     }).join('')
     const orient = isC?'portrait':'landscape'
@@ -260,13 +268,14 @@ export default function InstagramCatalogPage() {
       ${[
         {label:'пабликов',value:String(allSel.length)},
         {label:'аудитория',value:fmtK(totalSubs)},
+        {label:'охват (прогноз)',value:fmtK(totalSelReach)},
         {label:'стоимость',value:fmt(totalPrice)+'₸'},
         ...(isC?[]:[{label:'маржа',value:fmt(totalPrice-totalCost)+'₸ ('+totalMarginPct+'%)'}])
       ].map(s=>`<div style="flex:1;min-width:120px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #bae6fd;border-radius:12px;padding:16px;text-align:center"><div style="font-size:24px;font-weight:800;color:#0369a1">${s.value}</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px">${s.label}</div></div>`).join('')}
     </div>
-    <table><thead><tr><th>№</th><th>Город</th><th>Instagram</th><th>Категория</th><th style="text-align:right">Подписчики</th><th style="text-align:right">CPM</th>${!isC?'<th style="text-align:right">Себест.</th>':''}<th style="text-align:right">Цена</th>${!isC?'<th style="text-align:right">Маржа</th><th style="text-align:right">%</th>':''}</tr></thead>
+    <table><thead><tr><th>№</th><th>Город</th><th>Instagram</th><th>Категория</th><th style="text-align:right">Подписчики</th><th style="text-align:right">Охват</th>${!isC?'<th style="text-align:right">Себест.</th>':''}<th style="text-align:right">Цена</th>${!isC?'<th style="text-align:right">Маржа</th><th style="text-align:right">%</th>':''}</tr></thead>
     <tbody>${rows}</tbody>
-    <tfoot><tr><td colspan="5" style="padding:12px;font-weight:700;border-top:2px solid #0ea5e9">ИТОГО</td><td style="padding:12px;text-align:right;font-weight:700;border-top:2px solid #0ea5e9"></td>${!isC?`<td style="padding:12px;text-align:right;font-weight:700;border-top:2px solid #0ea5e9">${fmt(totalCost)}₸</td>`:''}
+    <tfoot><tr><td colspan="6" style="padding:12px;font-weight:700;border-top:2px solid #0ea5e9">ИТОГО</td>${!isC?`<td style="padding:12px;text-align:right;font-weight:700;border-top:2px solid #0ea5e9">${fmt(totalCost)}₸</td>`:''}
     <td style="padding:12px;text-align:right;font-weight:800;color:#0ea5e9;border-top:2px solid #0ea5e9">${fmt(totalPrice)}₸</td>${!isC?`<td style="padding:12px;text-align:right;font-weight:800;color:#10b981;border-top:2px solid #0ea5e9">${fmt(totalPrice-totalCost)}₸</td><td style="padding:12px;text-align:right;font-weight:800;color:#10b981;border-top:2px solid #0ea5e9">${totalMarginPct}%</td>`:''}</tr></tfoot></table>
     <div style="text-align:center;margin-top:32px;padding:20px;border-top:2px solid #e2e8f0">
       <div style="font-size:13px;font-weight:700;color:#0ea5e9;margin-bottom:4px">PABLIKI.KZ</div>
@@ -275,7 +284,7 @@ export default function InstagramCatalogPage() {
     </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"><\/script>
-    <script>function sharePdf(){var el=document.getElementById("pdfContent");var f="mediaplan-pabliki-"+new Date().toISOString().slice(0,10)+".pdf";if(typeof html2pdf==="undefined"){window.print();return}html2pdf().set({margin:[8,4,8,4],filename:f,image:{type:"jpeg",quality:0.95},html2canvas:{scale:2},jsPDF:{unit:"mm",format:"a4",orientation:"${orient}"}}).from(el).outputPdf("blob").then(function(b){var file=new File([b],f,{type:"application/pdf"});if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({title:"Медиаплан Pabliki.kz",files:[file]}).catch(function(){})}else{var u=URL.createObjectURL(b);var a=document.createElement("a");a.href=u;a.download=f;a.click();URL.revokeObjectURL(u)}}).catch(function(){window.print()})}<\/script></body></html>`
+    <script>function sharePdf(){var el=document.getElementById("pdfContent");var f="mediaplan-pabliki-"+new Date().toISOString().slice(0,10)+".pdf";if(typeof html2pdf==="undefined"){window.print();return}html2pdf().set({margin:[8,4,8,4],filename:f,image:{type:"jpeg",quality:0.95},html2canvas:{scale:2},jsPDF:{unit:"mm",format:"a4",orientation:"${orient}"}}).from(el).outputPdf("blob").then(function(b){var u=URL.createObjectURL(b);var a=document.createElement("a");a.href=u;a.download=f;a.click();setTimeout(function(){URL.revokeObjectURL(u)},1000)}).catch(function(){window.print()})}<\/script></body></html>`
     const w = window.open('','_blank'); if(w){w.document.write(html);w.document.close()} else showToast('Разрешите всплывающие окна')
   }
 
@@ -355,7 +364,7 @@ export default function InstagramCatalogPage() {
           { label: 'Всего пабликов', value: pabliks.length, icon: '📊' },
           { label: 'Городов', value: uniqueCities.size, icon: '🏙️' },
           { label: 'Суммарная аудитория', value: fmtK(totalAllSubs), icon: '👥' },
-          { label: 'Средний CPM', value: avgCPM + '₸', icon: '💰' },
+          { label: 'Прогноз охвата', value: fmtK(totalReach), icon: '👁' },
         ].map((card, i) => (
           <div key={i} className="relative overflow-hidden rounded-2xl bg-gray-900/60 border border-sky-500/20 p-4 sm:p-5 backdrop-blur anim-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
             <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-blue-500/5 pointer-events-none" />
@@ -465,8 +474,8 @@ export default function InstagramCatalogPage() {
             className="w-full h-2 bg-gray-800 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-sky-500 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-sky-500/40 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-sky-400" />
         </div>
         <div>
-          <div className="flex justify-between text-xs mb-2"><span className="text-gray-400 font-medium">📈 Макс. CPM (₸ за 1000 подп.)</span><span className="text-white font-bold bg-gray-800 px-2.5 py-0.5 rounded-lg">{maxCPM>=500?'∞':maxCPM+'₸'}</span></div>
-          <input type="range" min={0} max={500} step={5} value={maxCPM} onChange={e=>{setMaxCPM(+e.target.value);setShowCount(PAGE_SIZE)}}
+          <div className="flex justify-between text-xs mb-2"><span className="text-gray-400 font-medium">👁 Мин. охват (прогноз 3-7%)</span><span className="text-white font-bold bg-gray-800 px-2.5 py-0.5 rounded-lg">{minReach<=0?'Все':fmtK(minReach)}</span></div>
+          <input type="range" min={0} max={50000} step={500} value={minReach} onChange={e=>{setMinReach(+e.target.value);setShowCount(PAGE_SIZE)}}
             className="w-full h-2 bg-gray-800 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-sky-500 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-sky-500/40 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-sky-400" />
         </div>
         <div>
@@ -517,7 +526,7 @@ export default function InstagramCatalogPage() {
       {/* ── Selection summary ── */}
       {allSel.length>0 && (
         <div className="bg-gradient-to-r from-sky-500/10 to-blue-500/10 rounded-2xl p-5 mb-5 border border-sky-500/25 backdrop-blur anim-fade-in">
-          <div className="grid grid-cols-3 sm:grid-cols-3 gap-4 text-sm mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-4">
             <div className="text-center sm:text-left">
               <div className="text-gray-400 text-xs font-medium mb-0.5">Пабликов</div>
               <div className="text-2xl font-bold text-white">{allSel.length}</div>
@@ -525,6 +534,10 @@ export default function InstagramCatalogPage() {
             <div className="text-center sm:text-left">
               <div className="text-gray-400 text-xs font-medium mb-0.5">Аудитория</div>
               <div className="text-2xl font-bold text-white">{fmtK(totalSubs)}</div>
+            </div>
+            <div className="text-center sm:text-left">
+              <div className="text-gray-400 text-xs font-medium mb-0.5">👁 Охват</div>
+              <div className="text-2xl font-bold text-sky-300">{fmtK(totalSelReach)}</div>
             </div>
             <div className="text-center sm:text-left">
               <div className="text-gray-400 text-xs font-medium mb-0.5">Стоимость</div>
@@ -580,7 +593,7 @@ export default function InstagramCatalogPage() {
                   <div>
                     <div className="text-lg font-bold text-white">{fmtK(p.subscribers)} <span className="text-xs text-gray-500 font-normal">подп.</span></div>
                     <div className="text-sm font-semibold text-white mt-0.5">{fmt(p.sell_post)}₸</div>
-                    <div className="text-[10px] text-gray-500 mt-0.5">CPM: {getCPM(p)}₸</div>
+                    <div className="text-[10px] text-sky-400/70 mt-0.5">👁 Охват: {fmtReach(p)}</div>
                   </div>
                   {mode === 'full' && (
                     <div className="text-right">
@@ -606,7 +619,7 @@ export default function InstagramCatalogPage() {
                 <th className="py-3 px-3 cursor-pointer hover:text-sky-400 transition font-semibold text-xs uppercase tracking-wide" onClick={()=>toggleSort('ig')}>Instagram{sortArrow('ig')}</th>
                 <th className="py-3 px-3 cursor-pointer hover:text-sky-400 transition font-semibold text-xs uppercase tracking-wide hidden sm:table-cell" onClick={()=>toggleSort('t')}>Кат.{sortArrow('t')}</th>
                 <th className="py-3 px-3 text-right cursor-pointer hover:text-sky-400 transition font-semibold text-xs uppercase tracking-wide" onClick={()=>toggleSort('s')}>Подп.{sortArrow('s')}</th>
-                <th className="py-3 px-3 text-right cursor-pointer hover:text-sky-400 transition font-semibold text-xs uppercase tracking-wide hidden sm:table-cell" onClick={()=>toggleSort('cpm')}>CPM{sortArrow('cpm')}</th>
+                <th className="py-3 px-3 text-right cursor-pointer hover:text-sky-400 transition font-semibold text-xs uppercase tracking-wide hidden sm:table-cell" onClick={()=>toggleSort('reach')}>Охват{sortArrow('reach')}</th>
                 {mode==='full' && <th className="py-3 px-3 text-right cursor-pointer hover:text-sky-400 transition font-semibold text-xs uppercase tracking-wide hidden sm:table-cell" onClick={()=>toggleSort('co')}>Себест.{sortArrow('co')}</th>}
                 <th className="py-3 px-3 text-right cursor-pointer hover:text-sky-400 transition font-semibold text-xs uppercase tracking-wide" onClick={()=>toggleSort('p')}>Цена{sortArrow('p')}</th>
                 {mode==='full' && <>
@@ -635,7 +648,7 @@ export default function InstagramCatalogPage() {
                     </td>
                     <td className="py-2.5 px-3 text-gray-500 text-[11px] whitespace-nowrap hidden sm:table-cell">{p.catIcon} {p.catName}</td>
                     <td className="py-2.5 px-3 text-right font-semibold text-white">{fmtK(p.subscribers)}</td>
-                    <td className="py-2.5 px-3 text-right text-gray-400 text-xs hidden sm:table-cell">{getCPM(p)}₸</td>
+                    <td className="py-2.5 px-3 text-right text-sky-400/80 text-xs hidden sm:table-cell font-medium">{fmtReach(p)}</td>
                     {mode==='full' && <td className="py-2.5 px-3 text-right text-gray-500 hidden sm:table-cell">{fmt(p.cost_post)}₸{p.cost_post===0&&' ⚠️'}</td>}
                     <td className="py-2.5 px-3 text-right font-semibold text-white">{fmt(p.sell_post)}₸</td>
                     {mode==='full' && <>
@@ -669,9 +682,10 @@ export default function InstagramCatalogPage() {
             <div className={`grid gap-4 ${allSel.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
               {allSel.map(p => {
                 const mPct = p.sell_post>0?Math.round((p.sell_post-p.cost_post)/p.sell_post*100):0
-                const cpm = getCPM(p)
+                const reach = getReach(p)
                 const maxS = Math.max(...allSel.map(x=>x.subscribers))
                 const maxP = Math.max(...allSel.map(x=>x.sell_post))
+                const maxR = Math.max(...allSel.map(x=>getReach(x).avg))
                 return (
                   <div key={p.username} className="bg-gray-800/60 rounded-2xl p-4 border border-gray-700/30">
                     <a href={`https://instagram.com/${p.username}`} target="_blank" rel="noreferrer" className="text-sky-400 font-semibold text-sm hover:text-sky-300">@{p.username}</a>
@@ -679,7 +693,7 @@ export default function InstagramCatalogPage() {
                     {[
                       { label: 'Подписчики', value: fmtK(p.subscribers), pct: p.subscribers/maxS*100 },
                       { label: 'Цена', value: fmt(p.sell_post)+'₸', pct: p.sell_post/maxP*100 },
-                      { label: 'CPM', value: cpm+'₸', pct: Math.min(100, cpm/Math.max(...allSel.map(x=>getCPM(x)))*100) },
+                      { label: 'Охват', value: fmtReach(p), pct: maxR>0?reach.avg/maxR*100:0 },
                       ...(mode==='full'?[{ label: 'Маржа', value: mPct+'%', pct: mPct }]:[]),
                     ].map((row,i) => (
                       <div key={i} className="mb-2">
