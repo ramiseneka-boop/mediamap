@@ -16,7 +16,7 @@ const PLATFORMS = [
   { value: 'bloggers', label: 'Реклама у Блогеров', icon: '🎬', color: 'from-purple-500 to-pink-600', desc: 'YouTube, Instagram, TikTok блогеры' },
   { value: 'whatsapp', label: 'WhatsApp рассылка', icon: '💬', color: 'from-green-500 to-green-700', desc: 'Рассылки по базе контактов' },
   { value: 'outdoor', label: 'Наружная реклама', icon: '🏙', color: 'from-amber-500 to-orange-600', desc: 'Билборды, ситилайты, LED' },
-  { value: 'radio', label: 'Реклама на Радио', icon: '📻', color: 'from-indigo-500 to-violet-700', desc: 'FM-станции Казахстана' },
+  { value: 'radio', label: 'Реклама на Радио', icon: '📻', color: 'from-purple-600 to-fuchsia-700', desc: 'FM-станции Казахстана' },
 ]
 
 export default function MediaPage() {
