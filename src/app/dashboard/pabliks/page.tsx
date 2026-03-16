@@ -15,6 +15,7 @@ const PLATFORMS = [
   { value: 'telegram', label: 'Telegram каналы', icon: '✈️', color: 'from-blue-400 to-blue-600', desc: 'Новостные и тематические каналы' },
   { value: 'bloggers', label: 'Реклама у Блогеров', icon: '🎬', color: 'from-blue-600 to-red-500', desc: 'YouTube, Instagram, TikTok блогеры' },
   { value: 'whatsapp', label: 'WhatsApp рассылка', icon: '💬', color: 'from-green-500 to-green-700', desc: 'Рассылки по базе контактов' },
+  { value: 'smm', label: 'SMM-Ведение', icon: '🚀', color: 'from-cyan-500 to-teal-600', desc: 'Контент, хештеги, лиды, календарь' },
   { value: 'outdoor', label: 'Наружная реклама', icon: '🏙', color: 'from-amber-500 to-orange-600', desc: 'Билборды, ситилайты, LED' },
   { value: 'radio', label: 'Реклама на Радио', icon: '📻', color: 'from-purple-600 to-fuchsia-700', desc: 'FM-станции Казахстана' },
 ]
@@ -82,7 +83,7 @@ export default function MediaPage() {
           return (
             <button
               key={p.value}
-              onClick={() => router.push(p.value === 'radio' ? '/dashboard/radio' : p.value === 'whatsapp' ? '/dashboard/whatsapp' : p.value === 'bloggers' ? '/dashboard/bloggers' : `/dashboard/pabliks/${p.value}`)}
+              onClick={() => router.push(p.value === 'radio' ? '/dashboard/radio' : p.value === 'whatsapp' ? '/dashboard/whatsapp' : p.value === 'bloggers' ? '/dashboard/bloggers' : p.value === 'smm' ? '/dashboard/smm' : `/dashboard/pabliks/${p.value}`)}
               className="group relative overflow-hidden rounded-2xl p-6 text-left transition-all hover:scale-[1.02] hover:shadow-xl"
             >
               {/* Gradient background */}
@@ -95,7 +96,18 @@ export default function MediaPage() {
                 <p className="text-white/70 text-sm mb-4">{p.desc}</p>
                 
                 <div className="flex items-center gap-4">
-                  {p.value === 'radio' ? (
+                  {p.value === 'smm' ? (
+                    <div className="flex gap-4">
+                      <div>
+                        <div className="text-2xl font-bold text-white">5</div>
+                        <div className="text-xs text-white/60">инструментов</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-white">18</div>
+                        <div className="text-xs text-white/60">ниш</div>
+                      </div>
+                    </div>
+                  ) : p.value === 'radio' ? (
                     <div>
                       <div className="text-2xl font-bold text-white">14</div>
                       <div className="text-xs text-white/60">регионов</div>
