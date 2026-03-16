@@ -299,9 +299,9 @@ export default function PlatformCatalogPage() {
       </div>
 
       {/* ── Advanced Filters Panel ── */}
-      <div className="rounded-xl border border-gray-800 bg-gray-900 mb-6 overflow-hidden">
+      <div className="rounded-xl border border-gray-800 bg-gray-900 mb-6 overflow-visible">
         {/* Gradient header */}
-        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-5">
+        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-5 rounded-t-xl">
           <h2 className="text-xl font-bold text-white">Найдите лучшие каналы для размещения</h2>
           <p className="text-cyan-100 text-sm mt-1">Выберите подходящие каналы из нашей базы для эффективного продвижения вашего бренда</p>
         </div>
