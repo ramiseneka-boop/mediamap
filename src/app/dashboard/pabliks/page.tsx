@@ -21,6 +21,7 @@ const PLATFORMS = [
 
 export default function MediaPage() {
   const [stats, setStats] = useState<PlatformStat[]>([])
+  const [clientsCount, setClientsCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const supabase = createSupabaseBrowser()
@@ -46,6 +47,8 @@ export default function MediaPage() {
       }
       setStats(Array.from(map.values()))
     }
+    const { count } = await supabase.from('clients').select('id', { count: 'exact', head: true })
+    setClientsCount(count || 0)
     setLoading(false)
   }
 
@@ -76,7 +79,7 @@ export default function MediaPage() {
           return (
             <button
               key={p.value}
-              onClick={() => router.push(`/dashboard/pabliks/${p.value}`)}
+              onClick={() => router.push(p.value === 'whatsapp' ? '/dashboard/whatsapp' : `/dashboard/pabliks/${p.value}`)}
               className="group relative overflow-hidden rounded-2xl p-6 text-left transition-all hover:scale-[1.02] hover:shadow-xl"
             >
               {/* Gradient background */}
@@ -89,7 +92,16 @@ export default function MediaPage() {
                 <p className="text-white/70 text-sm mb-4">{p.desc}</p>
                 
                 <div className="flex items-center gap-4">
-                  {count > 0 ? (
+                  {p.value === 'whatsapp' ? (
+                    clientsCount > 0 ? (
+                      <div>
+                        <div className="text-2xl font-bold text-white">{formatNum(clientsCount)}</div>
+                        <div className="text-xs text-white/60">контактов в базе</div>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-white/50">Загрузка...</div>
+                    )
+                  ) : count > 0 ? (
                     <>
                       <div>
                         <div className="text-2xl font-bold text-white">{count}</div>
