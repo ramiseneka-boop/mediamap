@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase-browser'
 
 /* ── Multi-select dropdown ── */
@@ -80,6 +80,130 @@ function MultiSelect({ options, selected, onChange, placeholder }: {
   )
 }
 
+/* ── Modal wrapper ── */
+function Modal({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: React.ReactNode; title: string }) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={onClose}>
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-5 border-b border-gray-800">
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-white text-xl leading-none">×</button>
+        </div>
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+/* ── WhatsApp Chat Popup ── */
+interface ChatMessage {
+  id: number
+  text: string
+  outgoing: boolean
+  time: string
+}
+
+function WhatsAppChatPopup({ senderName, senderPhone, senderAvatar, senderStatus }: {
+  senderName: string
+  senderPhone: string
+  senderAvatar: string
+  senderStatus: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { id: 1, text: 'Здравствуйте! 👋 Чем могу помочь?', outgoing: true, time: '12:00' },
+  ])
+  const [input, setInput] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const send = () => {
+    if (!input.trim()) return
+    const now = new Date()
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      text: input.trim(),
+      outgoing: true,
+      time: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`,
+    }])
+    setInput('')
+  }
+
+  return (
+    <>
+      {/* FAB */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="fixed bottom-6 right-6 z-[90] w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white text-2xl transition-transform hover:scale-110"
+        style={{ background: '#25D366' }}
+      >
+        {open ? '✕' : '💬'}
+      </button>
+
+      {/* Chat window */}
+      <div
+        className={`fixed bottom-24 right-6 z-[90] w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl overflow-hidden shadow-2xl border border-gray-700 transition-all duration-300 ${
+          open ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
+        style={{ height: 500 }}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3 px-4 py-3" style={{ background: 'linear-gradient(135deg, #128C7E, #25D366)' }}>
+          <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden flex-shrink-0">
+            {senderAvatar ? (
+              <img src={senderAvatar} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-500 text-white text-lg">👤</div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-white text-sm truncate">{senderName}</div>
+            <div className="text-[11px] text-green-100">{senderPhone} · в сети</div>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ height: 370, background: '#0b141a', backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M30 5 L35 15 L30 12 L25 15Z\' fill=\'%23ffffff08\'/%3E%3C/svg%3E")' }}>
+          {messages.map(msg => (
+            <div key={msg.id} className={`flex ${msg.outgoing ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className={`relative max-w-[80%] px-3 py-2 rounded-lg text-sm ${
+                  msg.outgoing
+                    ? 'bg-[#005c4b] text-white rounded-tr-none'
+                    : 'bg-[#202c33] text-gray-200 rounded-tl-none'
+                }`}
+              >
+                <p className="whitespace-pre-line break-words">{msg.text}</p>
+                <span className="text-[10px] text-gray-400 float-right mt-1 ml-2">{msg.time}</span>
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-[#202c33]">
+          <input
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && send()}
+            placeholder="Введите сообщение..."
+            className="flex-1 bg-[#2a3942] text-white text-sm rounded-full px-4 py-2 focus:outline-none placeholder-gray-500"
+          />
+          <button onClick={send} className="w-9 h-9 rounded-full flex items-center justify-center text-white flex-shrink-0" style={{ background: '#25D366' }}>
+            ➤
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // Hardcoded templates (fallback if DB tables not yet created)
 const FALLBACK_TEMPLATES = [
   { id: 1, name: '🍽️ Рестораны/Кафе', niche: 'Рестораны/Кафе', message: 'Здравствуйте! 👋\n\nМы — Pabliki.kz, городская медиасеть Казахстана. Помогаем ресторанам и кафе привлекать гостей через рекламу в Instagram-пабликах.\n\n🔥 Что мы предлагаем:\n✅ Размещение в 700+ городских пабликах\n✅ Охват от 50 000 до 500 000 подписчиков\n✅ Нативный формат — не выглядит как реклама\n✅ Результат уже в первые дни\n\n📊 Кейс: ресторан в Алматы получил 200+ бронирований за неделю с одного размещения.\n\nХотите узнать, сколько стоит реклама для вашего заведения? Подготовим бесплатный медиаплан! 📋' },
@@ -131,6 +255,58 @@ export default function WhatsAppPage() {
   const [broadcastName, setBroadcastName] = useState('')
   const [dbAvailable, setDbAvailable] = useState(false)
 
+  // Template editing
+  const [editModal, setEditModal] = useState<Template | null>(null)
+  const [editMessage, setEditMessage] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+
+  // Create template
+  const [createModal, setCreateModal] = useState(false)
+  const [newTplName, setNewTplName] = useState('')
+  const [newTplNiche, setNewTplNiche] = useState('')
+  const [newTplMessage, setNewTplMessage] = useState('')
+  const [newTplSaving, setNewTplSaving] = useState(false)
+
+  // Broadcast message override
+  const [messageOverride, setMessageOverride] = useState('')
+
+  // Settings
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [senderName, setSenderName] = useState('Pabliki.kz')
+  const [senderPhone, setSenderPhone] = useState('+7 700 000 0000')
+  const [senderAvatar, setSenderAvatar] = useState('')
+  const [senderStatus, setSenderStatus] = useState('Городская медиасеть Казахстана')
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+
+  // Load settings from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSenderName(localStorage.getItem('wa_sender_name') || 'Pabliki.kz')
+      setSenderPhone(localStorage.getItem('wa_sender_phone') || '+7 700 000 0000')
+      setSenderAvatar(localStorage.getItem('wa_profile_avatar') || '')
+      setSenderStatus(localStorage.getItem('wa_sender_status') || 'Городская медиасеть Казахстана')
+    }
+  }, [])
+
+  const saveSettings = () => {
+    localStorage.setItem('wa_sender_name', senderName)
+    localStorage.setItem('wa_sender_phone', senderPhone)
+    localStorage.setItem('wa_profile_avatar', senderAvatar)
+    localStorage.setItem('wa_sender_status', senderStatus)
+    setSettingsOpen(false)
+  }
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string
+      setSenderAvatar(result)
+    }
+    reader.readAsDataURL(file)
+  }
+
   // Stats
   const stats = useMemo(() => {
     return broadcasts.reduce(
@@ -152,33 +328,27 @@ export default function WhatsAppPage() {
   }, [filterCities, filterNiches])
 
   async function loadData() {
-    // Load cities
     const { data: citiesData } = await supabase.from('cities').select('id, name').order('name')
     if (citiesData) setCities(citiesData)
 
-    // Load unique niches from clients
     const { data: nicheData } = await supabase.from('clients').select('niche').not('niche', 'is', null)
     if (nicheData) {
       const unique = [...new Set(nicheData.map((c: any) => c.niche).filter(Boolean))]
       setNiches(unique.sort())
     }
 
-    // Total clients with phone
     const { count } = await supabase.from('clients').select('id', { count: 'exact', head: true }).not('phone', 'is', null)
     setTotalClients(count || 0)
 
-    // Try loading from wa_templates
     const { data: tplData, error: tplErr } = await supabase.from('wa_templates').select('*')
     if (!tplErr && tplData && tplData.length > 0) {
       setTemplates(tplData)
       setDbAvailable(true)
     }
 
-    // Try loading broadcasts
     const { data: bData } = await supabase.from('wa_broadcasts').select('*').order('created_at', { ascending: false })
     if (bData) setBroadcasts(bData)
 
-    // Initial count
     updateRecipientCount()
   }
 
@@ -204,11 +374,11 @@ export default function WhatsAppPage() {
       if (error) {
         alert('Ошибка: ' + error.message)
       } else {
-        // Reload
         const { data } = await supabase.from('wa_broadcasts').select('*').order('created_at', { ascending: false })
         if (data) setBroadcasts(data)
         setSelectedTemplate(null)
         setBroadcastName('')
+        setMessageOverride('')
         setFilterCities([])
         setFilterNiches([])
       }
@@ -217,6 +387,37 @@ export default function WhatsAppPage() {
     }
 
     setCreating(false)
+  }
+
+  async function saveEditTemplate() {
+    if (!editModal) return
+    setEditSaving(true)
+    if (dbAvailable) {
+      await supabase.from('wa_templates').update({ message: editMessage }).eq('id', editModal.id)
+    }
+    setTemplates(prev => prev.map(t => t.id === editModal.id ? { ...t, message: editMessage } : t))
+    if (selectedTemplate?.id === editModal.id) {
+      setSelectedTemplate({ ...editModal, message: editMessage })
+    }
+    setEditSaving(false)
+    setEditModal(null)
+  }
+
+  async function saveNewTemplate() {
+    setNewTplSaving(true)
+    if (dbAvailable) {
+      const { data, error } = await supabase.from('wa_templates').insert({ name: newTplName, niche: newTplNiche, message: newTplMessage }).select().single()
+      if (!error && data) {
+        setTemplates(prev => [...prev, data])
+      }
+    } else {
+      setTemplates(prev => [...prev, { id: Date.now(), name: newTplName, niche: newTplNiche, message: newTplMessage }])
+    }
+    setNewTplName('')
+    setNewTplNiche('')
+    setNewTplMessage('')
+    setNewTplSaving(false)
+    setCreateModal(false)
   }
 
   const statusColors: Record<string, string> = {
@@ -237,16 +438,109 @@ export default function WhatsAppPage() {
     failed: 'Ошибка',
   }
 
+  const previewMessage = messageOverride || selectedTemplate?.message || ''
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-3">
-          <span className="text-3xl">💬</span>
-          WhatsApp Рассылка
-        </h1>
-        <p className="text-gray-400 mt-1">Создавайте и управляйте рассылками по базе клиентов</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-3">
+            <span className="text-3xl">💬</span>
+            WhatsApp Рассылка
+          </h1>
+          <p className="text-gray-400 mt-1">Создавайте и управляйте рассылками по базе клиентов</p>
+        </div>
+        <button
+          onClick={() => setSettingsOpen(true)}
+          className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-2 text-sm transition"
+        >
+          ⚙️ Настройки профиля
+        </button>
       </div>
+
+      {/* Settings Modal */}
+      <Modal open={settingsOpen} onClose={() => setSettingsOpen(false)} title="⚙️ Настройки профиля WhatsApp">
+        <div className="space-y-4">
+          <div className="flex flex-col items-center gap-3">
+            <div
+              className="w-20 h-20 rounded-full bg-gray-800 border-2 border-gray-600 overflow-hidden cursor-pointer hover:border-cyan-500 transition flex items-center justify-center"
+              onClick={() => avatarInputRef.current?.click()}
+            >
+              {senderAvatar ? (
+                <img src={senderAvatar} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-3xl">👤</span>
+              )}
+            </div>
+            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+            <button onClick={() => avatarInputRef.current?.click()} className="text-xs text-cyan-400 hover:text-cyan-300">
+              Загрузить аватар
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Имя отправителя</label>
+            <input type="text" value={senderName} onChange={e => setSenderName(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Номер телефона</label>
+            <input type="text" value={senderPhone} onChange={e => setSenderPhone(e.target.value)} placeholder="+7 700 000 0000"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Статус</label>
+            <input type="text" value={senderStatus} onChange={e => setSenderStatus(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" />
+          </div>
+
+          <button onClick={saveSettings} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium py-2.5 rounded-lg transition text-sm">
+            💾 Сохранить
+          </button>
+        </div>
+      </Modal>
+
+      {/* Edit Template Modal */}
+      <Modal open={!!editModal} onClose={() => setEditModal(null)} title={`✏️ Редактировать: ${editModal?.name || ''}`}>
+        <div className="space-y-4">
+          <textarea
+            value={editMessage}
+            onChange={e => setEditMessage(e.target.value)}
+            rows={12}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none resize-none"
+          />
+          <button onClick={saveEditTemplate} disabled={editSaving}
+            className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 text-white font-medium py-2.5 rounded-lg transition text-sm">
+            {editSaving ? '⏳ Сохранение...' : '💾 Сохранить'}
+          </button>
+        </div>
+      </Modal>
+
+      {/* Create Template Modal */}
+      <Modal open={createModal} onClose={() => setCreateModal(false)} title="➕ Создать шаблон">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Название</label>
+            <input type="text" value={newTplName} onChange={e => setNewTplName(e.target.value)} placeholder="🍕 Пиццерии"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Ниша</label>
+            <input type="text" value={newTplNiche} onChange={e => setNewTplNiche(e.target.value)} placeholder="Пиццерии"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Сообщение</label>
+            <textarea value={newTplMessage} onChange={e => setNewTplMessage(e.target.value)} rows={10} placeholder="Здравствуйте! 👋..."
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none resize-none" />
+          </div>
+          <button onClick={saveNewTemplate} disabled={newTplSaving || !newTplName.trim() || !newTplMessage.trim()}
+            className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 disabled:text-gray-400 text-white font-medium py-2.5 rounded-lg transition text-sm">
+            {newTplSaving ? '⏳ Сохранение...' : '💾 Создать шаблон'}
+          </button>
+        </div>
+      </Modal>
 
       {/* Stats Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -273,22 +567,38 @@ export default function WhatsAppPage() {
           {templates.map(tpl => (
             <div
               key={tpl.id}
-              onClick={() => setSelectedTemplate(tpl)}
-              className={`cursor-pointer rounded-xl border p-4 transition-all hover:border-cyan-500/50 ${
+              className={`rounded-xl border p-4 transition-all ${
                 selectedTemplate?.id === tpl.id
                   ? 'border-cyan-400 bg-cyan-500/10 ring-1 ring-cyan-400/50'
-                  : 'border-gray-700 bg-gray-900 hover:bg-gray-800'
+                  : 'border-gray-700 bg-gray-900 hover:bg-gray-800 hover:border-cyan-500/50'
               }`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-sm">{tpl.name}</h3>
-                {selectedTemplate?.id === tpl.id && (
-                  <span className="text-xs bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full">Выбран</span>
-                )}
+              <div className="cursor-pointer" onClick={() => { setSelectedTemplate(tpl); setMessageOverride('') }}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium text-sm">{tpl.name}</h3>
+                  {selectedTemplate?.id === tpl.id && (
+                    <span className="text-xs bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full">Выбран</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 line-clamp-4 whitespace-pre-line">{tpl.message.substring(0, 200)}...</p>
               </div>
-              <p className="text-xs text-gray-400 line-clamp-4 whitespace-pre-line">{tpl.message.substring(0, 200)}...</p>
+              <button
+                onClick={(e) => { e.stopPropagation(); setEditModal(tpl); setEditMessage(tpl.message) }}
+                className="mt-3 text-xs text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1"
+              >
+                ✏️ Редактировать
+              </button>
             </div>
           ))}
+
+          {/* Create template card */}
+          <div
+            onClick={() => setCreateModal(true)}
+            className="cursor-pointer rounded-xl border-2 border-dashed border-gray-700 hover:border-cyan-500/50 p-4 flex flex-col items-center justify-center gap-2 min-h-[140px] transition hover:bg-gray-800/50"
+          >
+            <span className="text-3xl">➕</span>
+            <span className="text-sm text-gray-400">Создать шаблон</span>
+          </div>
         </div>
       </div>
 
@@ -317,6 +627,7 @@ export default function WhatsAppPage() {
                 onChange={e => {
                   const tpl = templates.find(t => t.id === Number(e.target.value))
                   setSelectedTemplate(tpl || null)
+                  setMessageOverride('')
                 }}
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none"
               >
@@ -362,24 +673,37 @@ export default function WhatsAppPage() {
           </div>
 
           {/* Right - Preview */}
-          <div>
+          <div className="space-y-3">
             <label className="block text-sm text-gray-400 mb-1">Предпросмотр сообщения</label>
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 min-h-[300px]">
+            <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 min-h-[200px]">
               {selectedTemplate ? (
                 <div className="bg-green-900/30 border border-green-800/50 rounded-lg p-4">
                   <div className="text-xs text-green-400 mb-2 flex items-center gap-1">
                     <span>💬</span> WhatsApp
                   </div>
                   <p className="text-sm whitespace-pre-line text-gray-200 leading-relaxed">
-                    {selectedTemplate.message}
+                    {previewMessage}
                   </p>
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+                <div className="flex items-center justify-center h-full text-gray-500 text-sm min-h-[180px]">
                   Выберите шаблон для предпросмотра...
                 </div>
               )}
             </div>
+
+            {selectedTemplate && (
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">✏️ Изменить текст для этой рассылки</label>
+                <textarea
+                  value={messageOverride}
+                  onChange={e => setMessageOverride(e.target.value)}
+                  placeholder="Оставьте пустым, чтобы использовать текст шаблона..."
+                  rows={5}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none resize-none"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -438,6 +762,14 @@ export default function WhatsAppPage() {
           Шаблоны показываются из локальных данных.
         </div>
       )}
+
+      {/* WhatsApp Chat Popup */}
+      <WhatsAppChatPopup
+        senderName={senderName}
+        senderPhone={senderPhone}
+        senderAvatar={senderAvatar}
+        senderStatus={senderStatus}
+      />
     </div>
   )
 }
