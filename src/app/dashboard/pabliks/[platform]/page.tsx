@@ -468,7 +468,7 @@ export default function PlatformCatalogPage() {
                     <div className="font-medium">{r.name}</div>
                     {r.username && (
                       <a
-                        href={platform === 'telegram' ? `https://t.me/${r.username}` : platform === 'instagram' ? `https://instagram.com/${r.username}` : `#`}
+                        href={platform === 'telegram' ? `https://t.me/${r.username}` : platform === 'youtube' ? `https://youtube.com/@${r.username}` : platform === 'tiktok' ? `https://tiktok.com/@${r.username}` : platform === 'instagram' ? `https://instagram.com/${r.username}` : `#`}
                         target="_blank"
                         rel="noreferrer"
                         className="text-gray-500 text-xs hover:text-cyan-400 transition"

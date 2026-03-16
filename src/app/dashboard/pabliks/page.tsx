@@ -33,6 +33,7 @@ export default function MediaPage() {
     const { data } = await supabase
       .from('media_resources')
       .select('platform, subscribers')
+      .range(0, 9999)
 
     if (data) {
       const map = new Map<string, PlatformStat>()
