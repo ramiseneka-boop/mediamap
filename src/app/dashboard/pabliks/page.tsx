@@ -16,6 +16,7 @@ const PLATFORMS = [
   { value: 'bloggers', label: 'Реклама у Блогеров', icon: '🎬', color: 'from-purple-500 to-pink-600', desc: 'YouTube, Instagram, TikTok блогеры' },
   { value: 'whatsapp', label: 'WhatsApp рассылка', icon: '💬', color: 'from-green-500 to-green-700', desc: 'Рассылки по базе контактов' },
   { value: 'outdoor', label: 'Наружная реклама', icon: '🏙', color: 'from-amber-500 to-orange-600', desc: 'Билборды, ситилайты, LED' },
+  { value: 'radio', label: 'Реклама на Радио', icon: '📻', color: 'from-indigo-500 to-violet-700', desc: 'FM-станции Казахстана' },
 ]
 
 export default function MediaPage() {
@@ -81,7 +82,7 @@ export default function MediaPage() {
           return (
             <button
               key={p.value}
-              onClick={() => router.push(p.value === 'whatsapp' ? '/dashboard/whatsapp' : p.value === 'bloggers' ? '/dashboard/bloggers' : `/dashboard/pabliks/${p.value}`)}
+              onClick={() => router.push(p.value === 'radio' ? '/dashboard/radio' : p.value === 'whatsapp' ? '/dashboard/whatsapp' : p.value === 'bloggers' ? '/dashboard/bloggers' : `/dashboard/pabliks/${p.value}`)}
               className="group relative overflow-hidden rounded-2xl p-6 text-left transition-all hover:scale-[1.02] hover:shadow-xl"
             >
               {/* Gradient background */}
@@ -94,7 +95,12 @@ export default function MediaPage() {
                 <p className="text-white/70 text-sm mb-4">{p.desc}</p>
                 
                 <div className="flex items-center gap-4">
-                  {p.value === 'whatsapp' ? (
+                  {p.value === 'radio' ? (
+                    <div>
+                      <div className="text-2xl font-bold text-white">14</div>
+                      <div className="text-xs text-white/60">регионов</div>
+                    </div>
+                  ) : p.value === 'whatsapp' ? (
                     clientsCount > 0 ? (
                       <div>
                         <div className="text-2xl font-bold text-white">{formatNum(clientsCount)}</div>
