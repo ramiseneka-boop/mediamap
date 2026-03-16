@@ -43,6 +43,7 @@ export default function ClientsPage() {
       .from('clients')
       .select('*, city:cities(name)')
       .order('created_at', { ascending: false })
+      .range(0, 9999)
     setClients(data || [])
     setLoading(false)
   }

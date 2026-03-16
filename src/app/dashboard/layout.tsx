@@ -9,6 +9,8 @@ const nav = [
   { href: '/dashboard/pabliks', label: 'Медиа', icon: '📡' },
   { href: '/dashboard/selections', label: 'Подборки', icon: '📋' },
   { href: '/dashboard/clients', label: 'Клиенты', icon: '👥' },
+  { href: '/dashboard/smm', label: 'SMM', icon: '🚀' },
+  { href: '/dashboard/whatsapp', label: 'WhatsApp', icon: '💬' },
   { href: '/dashboard/economics', label: 'Экономика', icon: '💰' },
 ]
 

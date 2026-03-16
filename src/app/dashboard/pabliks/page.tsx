@@ -83,7 +83,7 @@ export default function MediaPage() {
           return (
             <button
               key={p.value}
-              onClick={() => router.push(p.value === 'radio' ? '/dashboard/radio' : p.value === 'whatsapp' ? '/dashboard/whatsapp' : p.value === 'bloggers' ? '/dashboard/bloggers' : p.value === 'smm' ? '/dashboard/smm' : `/dashboard/pabliks/${p.value}`)}
+              onClick={() => p.value === 'outdoor' ? null : router.push(p.value === 'radio' ? '/dashboard/radio' : p.value === 'whatsapp' ? '/dashboard/whatsapp' : p.value === 'bloggers' ? '/dashboard/bloggers' : p.value === 'smm' ? '/dashboard/smm' : `/dashboard/pabliks/${p.value}`)}
               className="group relative overflow-hidden rounded-2xl p-6 text-left transition-all hover:scale-[1.02] hover:shadow-xl"
             >
               {/* Gradient background */}
