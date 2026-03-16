@@ -9,6 +9,7 @@ const nav = [
   { href: '/dashboard/pabliks', label: 'Медиа', icon: '📡' },
   { href: '/dashboard/selections', label: 'Подборки', icon: '📋' },
   { href: '/dashboard/clients', label: 'Клиенты', icon: '👥' },
+  { href: '/dashboard/whatsapp', label: 'WhatsApp', icon: '💬' },
   { href: '/dashboard/economics', label: 'Экономика', icon: '💰' },
 ]
 
@@ -45,7 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               key={item.href}
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm ${
-                pathname === item.href
+                (item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href))
                   ? 'bg-amber-500/10 text-amber-400 font-medium'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800'
               }`}
@@ -90,7 +91,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm ${
-                    pathname === item.href
+                    (item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href))
                       ? 'bg-amber-500/10 text-amber-400 font-medium'
                       : 'text-gray-400 hover:text-white hover:bg-gray-800'
                   }`}
