@@ -1,7 +1,84 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase-browser'
+
+/* ── Multi-select dropdown ── */
+function MultiSelect({ options, selected, onChange, placeholder }: {
+  options: string[]
+  selected: string[]
+  onChange: (v: string[]) => void
+  placeholder: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const filtered = options.filter(o => o.toLowerCase().includes(query.toLowerCase()))
+  const toggle = (val: string) => {
+    onChange(selected.includes(val) ? selected.filter(v => v !== val) : [...selected, val])
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-left flex items-center justify-between hover:border-gray-600 transition"
+      >
+        <span className={selected.length ? 'text-white' : 'text-gray-400'}>
+          {selected.length ? `Выбрано: ${selected.length}` : placeholder}
+        </span>
+        <svg className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+      </button>
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-1.5">
+          {selected.map(s => (
+            <span key={s} className="inline-flex items-center gap-1 bg-cyan-500/20 text-cyan-400 text-xs px-2 py-0.5 rounded-full">
+              {s}
+              <button onClick={() => toggle(s)} className="hover:text-white">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-64 overflow-hidden">
+          <div className="p-2">
+            <input
+              type="text"
+              placeholder="Поиск..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-cyan-500"
+            />
+          </div>
+          <div className="overflow-y-auto max-h-48 px-1 pb-2">
+            {filtered.length === 0 && <div className="text-gray-500 text-sm px-3 py-2">Не найдено</div>}
+            {filtered.map(o => (
+              <label key={o} className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-700/50 rounded cursor-pointer text-sm">
+                <input type="checkbox" checked={selected.includes(o)} onChange={() => toggle(o)} className="accent-cyan-500 rounded" />
+                <span className="text-gray-200">{o}</span>
+              </label>
+            ))}
+          </div>
+          {selected.length > 0 && (
+            <button onClick={() => onChange([])} className="w-full text-xs text-gray-400 hover:text-cyan-400 py-1.5 border-t border-gray-700">
+              Сбросить всё
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // Hardcoded templates (fallback if DB tables not yet created)
 const FALLBACK_TEMPLATES = [
@@ -47,8 +124,8 @@ export default function WhatsAppPage() {
 
   // New broadcast form
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
-  const [filterCity, setFilterCity] = useState('')
-  const [filterNiche, setFilterNiche] = useState('')
+  const [filterCities, setFilterCities] = useState<string[]>([])
+  const [filterNiches, setFilterNiches] = useState<string[]>([])
   const [recipientCount, setRecipientCount] = useState(0)
   const [creating, setCreating] = useState(false)
   const [broadcastName, setBroadcastName] = useState('')
@@ -72,7 +149,7 @@ export default function WhatsAppPage() {
 
   useEffect(() => {
     updateRecipientCount()
-  }, [filterCity, filterNiche])
+  }, [filterCities, filterNiches])
 
   async function loadData() {
     // Load cities
@@ -107,8 +184,8 @@ export default function WhatsAppPage() {
 
   async function updateRecipientCount() {
     let query = supabase.from('clients').select('id', { count: 'exact', head: true }).not('phone', 'is', null)
-    if (filterCity) query = query.eq('city_id', filterCity)
-    if (filterNiche) query = query.eq('niche', filterNiche)
+    if (filterCities.length > 0) query = query.in('city_id', filterCities)
+    if (filterNiches.length > 0) query = query.in('niche', filterNiches)
     const { count } = await query
     setRecipientCount(count || 0)
   }
@@ -132,8 +209,8 @@ export default function WhatsAppPage() {
         if (data) setBroadcasts(data)
         setSelectedTemplate(null)
         setBroadcastName('')
-        setFilterCity('')
-        setFilterNiche('')
+        setFilterCities([])
+        setFilterNiches([])
       }
     } else {
       alert('Рассылка создана (демо-режим). Таблицы WA ещё не созданы в Supabase.')
@@ -251,31 +328,23 @@ export default function WhatsAppPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Город</label>
-              <select
-                value={filterCity}
-                onChange={e => setFilterCity(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none"
-              >
-                <option value="">Все города</option>
-                {cities.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              <label className="block text-sm text-gray-400 mb-1">Города</label>
+              <MultiSelect
+                options={cities.map(c => c.name)}
+                selected={filterCities.map(id => cities.find(c => String(c.id) === id)?.name || '')}
+                onChange={(names) => setFilterCities(names.map(n => String(cities.find(c => c.name === n)?.id || '')))}
+                placeholder="Все города"
+              />
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Ниша</label>
-              <select
-                value={filterNiche}
-                onChange={e => setFilterNiche(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none"
-              >
-                <option value="">Все ниши</option>
-                {niches.map(n => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
+              <label className="block text-sm text-gray-400 mb-1">Ниши</label>
+              <MultiSelect
+                options={niches}
+                selected={filterNiches}
+                onChange={setFilterNiches}
+                placeholder="Все ниши"
+              />
             </div>
 
             <div className="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-3">
