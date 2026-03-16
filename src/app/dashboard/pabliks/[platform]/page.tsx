@@ -24,7 +24,7 @@ const PLATFORM_META: Record<string, { label: string; icon: string }> = {
   telegram: { label: 'Telegram каналы', icon: '✈️' },
   youtube: { label: 'YouTube', icon: '▶️' },
   tiktok: { label: 'TikTok', icon: '🎵' },
-  '2gis': { label: '2GIS реклама', icon: '📍' },
+  whatsapp: { label: 'WhatsApp рассылка', icon: '💬' },
   outdoor: { label: 'Наружная реклама', icon: '🏙' },
 }
 

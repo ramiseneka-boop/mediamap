@@ -15,7 +15,7 @@ const PLATFORMS = [
   { value: 'telegram', label: 'Telegram каналы', icon: '✈️', color: 'from-blue-400 to-blue-600', desc: 'Новостные и тематические каналы' },
   { value: 'youtube', label: 'YouTube', icon: '▶️', color: 'from-red-500 to-red-700', desc: 'Видео-блогеры и каналы' },
   { value: 'tiktok', label: 'TikTok', icon: '🎵', color: 'from-gray-700 to-gray-900', desc: 'Короткие видео, блогеры' },
-  { value: '2gis', label: '2GIS реклама', icon: '📍', color: 'from-green-500 to-green-700', desc: 'Баннеры и карточки в 2GIS' },
+  { value: 'whatsapp', label: 'WhatsApp рассылка', icon: '💬', color: 'from-green-500 to-green-700', desc: 'Рассылки по базе контактов' },
   { value: 'outdoor', label: 'Наружная реклама', icon: '🏙', color: 'from-amber-500 to-orange-600', desc: 'Билборды, ситилайты, LED' },
 ]
 
