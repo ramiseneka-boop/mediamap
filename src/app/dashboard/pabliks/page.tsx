@@ -13,8 +13,7 @@ interface PlatformStat {
 const PLATFORMS = [
   { value: 'instagram', label: 'Instagram Паблики', icon: '📸', color: 'from-pink-500 to-purple-600', desc: 'Городские паблики Казахстана' },
   { value: 'telegram', label: 'Telegram каналы', icon: '✈️', color: 'from-blue-400 to-blue-600', desc: 'Новостные и тематические каналы' },
-  { value: 'youtube', label: 'YouTube', icon: '▶️', color: 'from-red-500 to-red-700', desc: 'Видео-блогеры и каналы' },
-  { value: 'tiktok', label: 'TikTok', icon: '🎵', color: 'from-gray-700 to-gray-900', desc: 'Короткие видео, блогеры' },
+  { value: 'bloggers', label: 'Реклама у Блогеров', icon: '🎬', color: 'from-purple-500 to-pink-600', desc: 'YouTube, Instagram, TikTok блогеры' },
   { value: 'whatsapp', label: 'WhatsApp рассылка', icon: '💬', color: 'from-green-500 to-green-700', desc: 'Рассылки по базе контактов' },
   { value: 'outdoor', label: 'Наружная реклама', icon: '🏙', color: 'from-amber-500 to-orange-600', desc: 'Билборды, ситилайты, LED' },
 ]
@@ -72,14 +71,17 @@ export default function MediaPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {PLATFORMS.map(p => {
-          const stat = getStat(p.value)
-          const count = stat?.count || 0
-          const subs = stat?.subscribers || 0
+          const isBloggers = p.value === 'bloggers'
+          const stat = isBloggers ? undefined : getStat(p.value)
+          const bloggersCount = isBloggers ? (getStat('youtube')?.count || 0) + (getStat('tiktok')?.count || 0) : 0
+          const bloggersSubs = isBloggers ? (getStat('youtube')?.subscribers || 0) + (getStat('tiktok')?.subscribers || 0) : 0
+          const count = isBloggers ? bloggersCount : (stat?.count || 0)
+          const subs = isBloggers ? bloggersSubs : (stat?.subscribers || 0)
 
           return (
             <button
               key={p.value}
-              onClick={() => router.push(p.value === 'whatsapp' ? '/dashboard/whatsapp' : `/dashboard/pabliks/${p.value}`)}
+              onClick={() => router.push(p.value === 'whatsapp' ? '/dashboard/whatsapp' : p.value === 'bloggers' ? '/dashboard/bloggers' : `/dashboard/pabliks/${p.value}`)}
               className="group relative overflow-hidden rounded-2xl p-6 text-left transition-all hover:scale-[1.02] hover:shadow-xl"
             >
               {/* Gradient background */}
